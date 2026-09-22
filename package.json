@@ -1,0 +1,12 @@
+{
+  "name": "juego-tina",
+  "version": "1.0.0",
+  "description": "Bella busca a Tina: juego de escondidas en el Museo de Arte Moderno de Medellín (Phaser 3).",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "paquete": "node tools/build-single.js",
+    "build": "echo \"No requiere compilación: los archivos se publican tal cual.\""
+  },
+  "license": "UNLICENSED"
+}

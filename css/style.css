@@ -1,0 +1,164 @@
+:root {
+  --bg: #141a2b;
+  --card: #fffaf3;
+  --ink: #2b2230;
+  --muted: #7a6f7f;
+  --pink: #f39bb5;
+  --pink-deep: #d9577f;
+  --gold: #f2c14e;
+  --cyan: #6fc2d0;
+  --pad-size: min(42vw, 190px);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overscroll-behavior: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#game { position: fixed; inset: 0; }
+#game canvas { display: block; }
+
+.hidden { display: none !important; }
+
+/* ───────── HUD ───────── */
+#hud {
+  position: fixed;
+  inset: 0 0 auto 0;
+  padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+  pointer-events: none;
+  z-index: 10;
+}
+.hud-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.hud-floor { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+#floorStack {
+  display: flex; flex-direction: column; gap: 2px;
+  background: rgba(10, 12, 24, 0.6); padding: 4px; border-radius: 10px;
+}
+#floorStack div {
+  width: 22px; height: 16px; border-radius: 4px;
+  font-size: 11px; font-weight: 700; line-height: 16px; text-align: center;
+  color: #cfd6e6; background: rgba(255, 255, 255, 0.08);
+}
+#floorStack div.active { background: var(--pink); color: #2b0f1a; }
+#floorName {
+  color: #fff; font-weight: 700; font-size: clamp(13px, 3.4vw, 17px);
+  background: rgba(10, 12, 24, 0.6); padding: 6px 10px; border-radius: 10px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#timer {
+  flex: 0 0 auto;
+  min-width: 72px; text-align: center;
+  font-size: clamp(26px, 7vw, 38px); font-weight: 800; color: #fff;
+  background: rgba(10, 12, 24, 0.7); padding: 2px 14px; border-radius: 14px;
+  font-variant-numeric: tabular-nums;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+}
+#timer.warn { color: #ff6b6b; border-color: #ff6b6b; animation: pulse 1s infinite; }
+@keyframes pulse { 50% { transform: scale(1.08); } }
+.hud-top > .icon-btn { flex: 0 0 auto; }
+.icon-btn {
+  pointer-events: auto;
+  width: 40px; height: 40px; border-radius: 12px; border: 0;
+  background: rgba(10, 12, 24, 0.6); color: #fff; font-size: 20px; cursor: pointer;
+}
+#hint {
+  margin: 10px auto 0; width: fit-content; max-width: 92vw;
+  color: #fff; font-size: clamp(13px, 3.6vw, 16px); font-weight: 600;
+  background: rgba(10, 12, 24, 0.65); padding: 7px 14px; border-radius: 999px;
+  text-align: center;
+}
+#hint:empty { display: none; }
+#hint.pop { animation: pop 0.35s ease-out; }
+@keyframes pop { from { transform: scale(0.85); opacity: 0.4; } to { transform: scale(1); opacity: 1; } }
+
+/* ───────── Cruceta ───────── */
+#dpad {
+  position: fixed;
+  left: max(18px, env(safe-area-inset-left));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: var(--pad-size); height: var(--pad-size);
+  z-index: 20;
+  touch-action: none;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.10), rgba(255,255,255,0.03) 70%);
+}
+#dpad .arrow {
+  position: absolute; width: 36%; height: 36%;
+  display: grid; place-items: center;
+  background: rgba(20, 24, 40, 0.72);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  transition: transform 0.06s, background 0.06s;
+  pointer-events: none;
+}
+#dpad .arrow svg { width: 60%; height: 60%; fill: #fff; }
+#dpad .up { left: 32%; top: 0; }
+#dpad .down { left: 32%; bottom: 0; }
+#dpad .left { left: 0; top: 32%; }
+#dpad .right { right: 0; top: 32%; }
+#dpad .center {
+  position: absolute; left: 38%; top: 38%; width: 24%; height: 24%; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08); pointer-events: none;
+}
+#dpad .arrow.active {
+  background: var(--pink-deep); border-color: #fff; transform: scale(0.93);
+}
+#dpad .arrow.active svg { fill: #fff; }
+
+/* En computador la cruceta es más pequeña y se ve un poco más transparente */
+@media (hover: hover) and (pointer: fine) {
+  :root { --pad-size: 170px; }
+  #dpad { opacity: 0.85; }
+}
+
+/* ───────── Pantallas ───────── */
+.screen {
+  position: fixed; inset: 0; z-index: 30;
+  display: grid; place-items: center;
+  padding: 16px;
+  background: radial-gradient(ellipse at center, rgba(20, 26, 43, 0.55), rgba(8, 10, 20, 0.9));
+  overflow-y: auto;
+  touch-action: pan-y;
+}
+.card {
+  width: min(520px, 100%);
+  background: var(--card);
+  border-radius: 24px;
+  padding: 22px 22px 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+.card h1 { margin: 6px 0 2px; font-size: clamp(26px, 7vw, 36px); color: var(--pink-deep); letter-spacing: -0.5px; }
+.card .sub { margin: 0 0 12px; color: var(--muted); font-weight: 600; font-size: 14px; }
+.card p { line-height: 1.45; margin: 8px 0; }
+.portraits { display: flex; align-items: flex-end; justify-content: center; gap: 10px; }
+.portraits canvas { image-rendering: auto; }
+#portraitBella { width: 80px; height: 120px; }
+#portraitTina { width: 80px; height: 72px; }
+.vs { font-size: 28px; margin-bottom: 24px; }
+.howto { text-align: left; padding-left: 0; list-style: none; margin: 12px 0 18px; font-size: 14.5px; }
+.howto li { margin: 7px 0; }
+.tag { display: inline-block; padding: 1px 7px; border-radius: 6px; font-weight: 700; font-size: 12px; }
+.tag.up { background: var(--gold); }
+.tag.down { background: var(--cyan); }
+.btn {
+  appearance: none; border: 0; cursor: pointer;
+  font-size: 20px; font-weight: 800; color: #fff;
+  background: linear-gradient(180deg, #f07aa0, var(--pink-deep));
+  padding: 14px 34px; border-radius: 999px;
+  box-shadow: 0 6px 0 #a83a5e, 0 10px 20px rgba(217, 87, 127, 0.4);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #a83a5e; }
+.btn:disabled { opacity: 0.6; cursor: wait; }
+.big-emoji { font-size: 64px; }

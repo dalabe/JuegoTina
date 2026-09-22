@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#141a2b" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Bella busca a Tina · MAMM</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐱</text></svg>" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="game"></div>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-top">
+      <div class="hud-floor">
+        <div id="floorStack" aria-label="Pisos"></div>
+        <div id="floorName">Piso 1</div>
+      </div>
+      <div id="timer" aria-live="polite">5:00</div>
+      <button id="btnFull" class="icon-btn" title="Pantalla completa" aria-label="Pantalla completa">⛶</button>
+    </div>
+    <div id="hint"></div>
+  </div>
+
+  <!-- Cruceta virtual (también responde a las flechas del teclado) -->
+  <div id="dpad" class="hidden" aria-label="Controles de movimiento">
+    <div class="arrow up" data-dir="up"><svg viewBox="0 0 24 24"><path d="M12 5l8 10H4z"/></svg></div>
+    <div class="arrow left" data-dir="left"><svg viewBox="0 0 24 24"><path d="M5 12l10-8v16z"/></svg></div>
+    <div class="arrow right" data-dir="right"><svg viewBox="0 0 24 24"><path d="M19 12L9 4v16z"/></svg></div>
+    <div class="arrow down" data-dir="down"><svg viewBox="0 0 24 24"><path d="M12 19L4 9h16z"/></svg></div>
+    <div class="center"></div>
+  </div>
+
+  <!-- Pantalla de inicio -->
+  <div id="startScreen" class="screen">
+    <div class="card">
+      <div class="portraits">
+        <canvas id="portraitBella" width="160" height="240"></canvas>
+        <div class="vs">🔍</div>
+        <canvas id="portraitTina" width="160" height="144"></canvas>
+      </div>
+      <h1>Bella busca a Tina</h1>
+      <p class="sub">Museo de Arte Moderno de Medellín</p>
+      <p>
+        ¡<b>Tina</b>, la gata siamés, se escondió en alguna de las plantas del museo!
+        Ayuda a <b>Bella</b> a encontrarla antes de que pasen <b id="secs">5 minutos</b>.
+      </p>
+      <ul class="howto">
+        <li>🕹️ Muévete con las <b>flechas</b> de la pantalla o del teclado (también WASD).</li>
+        <li>🪜 Pisa las escaleras <span class="tag up">▲ subir</span> <span class="tag down">▼ bajar</span> para cambiar de piso.</li>
+        <li>🔊 Escucha los <b>maullidos</b>: te dicen si Tina está cerca, arriba o abajo.</li>
+      </ul>
+      <button id="btnPlay" class="btn" disabled>Cargando…</button>
+    </div>
+  </div>
+
+  <!-- Pantalla final -->
+  <div id="endScreen" class="screen hidden">
+    <div class="card">
+      <div id="endEmoji" class="big-emoji">🎉</div>
+      <h1 id="endTitle">¡La encontraste!</h1>
+      <p id="endText"></p>
+      <button id="btnAgain" class="btn">Jugar de nuevo</button>
+    </div>
+  </div>
+
+  <noscript>Este juego necesita JavaScript.</noscript>
+
+  <!-- Motor gráfico: Phaser 3 (local, sin CDN, funciona sin internet) -->
+  <script src="js/lib/phaser.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/data/floors.js"></script>
+  <script src="js/sprites.js"></script>
+  <script src="js/mapRenderer.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/controls.js"></script>
+  <script src="js/scenes/GameScene.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.1184077">
+  <PropertyGroup>
+    <!-- Comando que Visual Studio ejecuta al presionar F5 / Iniciar -->
+    <StartupCommand>npm start</StartupCommand>
+    <!-- No hay paso de compilación: HTML + JS estático -->
+    <ShouldRunBuildScript>false</ShouldRunBuildScript>
+    <ShouldRunNpmInstall>false</ShouldRunNpmInstall>
+    <BuildOutputFolder>$(MSBuildProjectDirectory)</BuildOutputFolder>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Fotos de referencia de los personajes: no hacen parte del juego publicado -->
+    <None Remove="Bella\**" />
+    <None Remove="Tina\**" />
+    <Content Remove="Bella\**" />
+    <Content Remove="Tina\**" />
+  </ItemGroup>
+</Project>
