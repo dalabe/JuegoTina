@@ -109,7 +109,7 @@ JT.GameScene = class GameScene extends Phaser.Scene {
    *  - Se guarda el historial de escondites usados (en localStorage, sobrevive a recargas).
    *  - Se elige al azar entre los escondites que llevan MÁS tiempo sin usarse
    *    (HIDE_FRESH_POOL opciones), así un escondite no se repite hasta que se han usado
-   *    casi todos los demás (con 52 escondites: mínimo 44 partidas entre repeticiones).
+   *    casi todos los demás (con 52 escondites: unas 40 partidas o más entre repeticiones).
    *  - Nunca se repite el piso de la partida anterior.
    */
   hideCandidates() {

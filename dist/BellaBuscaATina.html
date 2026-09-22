@@ -2025,10 +2025,12 @@ JT.GameScene = class GameScene extends Phaser.Scene {
   }
 
   /*
-   * Escondite de Tina con "bolsa barajada":
-   *  - recorre TODOS los escondites en orden aleatorio sin repetir ninguno hasta agotarlos;
-   *  - nunca usa el mismo piso en dos partidas seguidas (ni al rebarajar);
-   *  - la bolsa se guarda en localStorage, así no se repite aunque se recargue la página.
+   * Escondite de Tina: siempre un lugar NUEVO y aleatorio.
+   *  - Se guarda el historial de escondites usados (en localStorage, sobrevive a recargas).
+   *  - Se elige al azar entre los escondites que llevan MÁS tiempo sin usarse
+   *    (HIDE_FRESH_POOL opciones), así un escondite no se repite hasta que se han usado
+   *    casi todos los demás (con 52 escondites: unas 40 partidas o más entre repeticiones).
+   *  - Nunca se repite el piso de la partida anterior.
    */
   hideCandidates() {
     const C = JT.CONFIG, spawn = this.maps.p1.spawn, list = [];
@@ -2041,47 +2043,28 @@ JT.GameScene = class GameScene extends Phaser.Scene {
     return list;
   }
 
-  buildHideBag(candidates, lastFloor) {
-    const byFloor = {};
-    candidates.forEach(c => (byFloor[c.floor] = byFloor[c.floor] || []).push(c.key));
-    Object.values(byFloor).forEach(l => Phaser.Utils.Array.Shuffle(l));
-    const bag = [];
-    let prev = lastFloor;
-    while (Object.values(byFloor).some(l => l.length)) {
-      const left = Object.keys(byFloor).filter(f => byFloor[f].length);
-      const others = left.filter(f => f !== prev);
-      // Prioriza pisos con más escondites pendientes para no quedar atrapado al final
-      const pool = others.length ? others : left;
-      const max = Math.max(...pool.map(f => byFloor[f].length));
-      const heavy = pool.filter(f => byFloor[f].length >= max - 1);
-      const f = Phaser.Utils.Array.GetRandom(heavy);
-      bag.push(byFloor[f].pop());
-      prev = f;
-    }
-    return bag;
-  }
-
   pickTinaSpot() {
+    const POOL = 8; // entre cuántos escondites "más olvidados" se sortea
     const candidates = this.hideCandidates();
-    const byKey = new Map(candidates.map(c => [c.key, c]));
-    let bag = [], last = null;
-    try {
-      bag = JSON.parse(localStorage.getItem('jt-tina-bag') || '[]');
-      last = localStorage.getItem('jt-tina-last');
-    } catch (e) { bag = this.hideBag || []; last = this.lastHide || null; }
-    // Si floors.js cambió, las claves guardadas pueden no existir: se descartan
-    bag = Array.isArray(bag) ? bag.filter(k => byKey.has(k) && k !== last) : [];
-    if (!bag.length) {
-      const lastFloor = last ? last.split(':')[0] : null;
-      bag = this.buildHideBag(candidates.filter(c => c.key !== last), lastFloor);
-    }
-    const key = bag.shift();
-    this.hideBag = bag; this.lastHide = key;
-    try {
-      localStorage.setItem('jt-tina-bag', JSON.stringify(bag));
-      localStorage.setItem('jt-tina-last', key);
-    } catch (e) { /* sin almacenamiento: se usa la memoria */ }
-    return byKey.get(key);
+    const keys = new Set(candidates.map(c => c.key));
+    let history = this.hideHistory || [];
+    try { history = JSON.parse(localStorage.getItem('jt-tina-history') || '[]'); } catch (e) { /* memoria */ }
+    // Si floors.js cambió, se descartan claves que ya no existen
+    history = (Array.isArray(history) ? history : []).filter(k => keys.has(k));
+    const lastFloor = history.length ? history[history.length - 1].split(':')[0] : null;
+
+    // Antigüedad: nunca usado = más antiguo; luego según su última aparición
+    const lastUse = new Map(history.map((k, i) => [k, i]));
+    const age = c => (lastUse.has(c.key) ? lastUse.get(c.key) : -1 - Math.random());
+    const fresh = candidates.filter(c => c.floor !== lastFloor).sort((a, b) => age(a) - age(b));
+    const pool = fresh.slice(0, Math.min(POOL, fresh.length));
+    const spot = Phaser.Utils.Array.GetRandom(pool.length ? pool : candidates);
+
+    history = history.filter(k => k !== spot.key);
+    history.push(spot.key);
+    this.hideHistory = history;
+    try { localStorage.setItem('jt-tina-history', JSON.stringify(history)); } catch (e) { /* memoria */ }
+    return spot;
   }
 
   endGame(won) {
