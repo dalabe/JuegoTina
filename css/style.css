@@ -66,6 +66,7 @@ html, body {
 #timer.warn { color: #ff6b6b; border-color: #ff6b6b; animation: pulse 1s infinite; }
 @keyframes pulse { 50% { transform: scale(1.08); } }
 .hud-top > .icon-btn { flex: 0 0 auto; }
+.hud-btns { flex: 1; display: flex; justify-content: flex-end; gap: 6px; }
 .icon-btn {
   pointer-events: auto;
   width: 40px; height: 40px; border-radius: 12px; border: 0;
