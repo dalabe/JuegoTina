@@ -89,20 +89,10 @@ JT.GameScene = class GameScene extends Phaser.Scene {
     this.lastTick = Math.ceil(this.remaining);
     this.elapsed = 0;
     this.nextMeow = 2.5;
+    JT.Audio.setPurr(0);
 
-    // Escondite aleatorio para Tina
     const spawn = this.maps.p1.spawn;
-    const candidates = [];
-    JT.FLOORS.forEach(def => {
-      this.maps[def.id].hides.forEach(h => {
-        if (def.id === 'p1' && Math.hypot(h[0] - spawn[0], h[1] - spawn[1]) < C.TINA_AVOID_START_FLOOR_RADIUS) return;
-        candidates.push({ floor: def.id, x: h[0], y: h[1] });
-      });
-    });
-    // Primero se elige la planta (todas con la misma probabilidad) y luego el escondite
-    const floors = [...new Set(candidates.map(c => c.floor))];
-    const f = Phaser.Utils.Array.GetRandom(floors);
-    this.tinaSpot = Phaser.Utils.Array.GetRandom(candidates.filter(c => c.floor === f));
+    this.tinaSpot = this.pickTinaSpot();
 
     this.tina.setFrame('t_sit').play('tinaIdle');
     this.tina.setFlipX(Math.random() < 0.5);
@@ -112,6 +102,66 @@ JT.GameScene = class GameScene extends Phaser.Scene {
     this.loadFloor('p1', ...spawn);
     this.setHint('¡Encuentra a Tina! Escucha sus maullidos 🐾');
     this.updateTimer();
+  }
+
+  /*
+   * Escondite de Tina con "bolsa barajada":
+   *  - recorre TODOS los escondites en orden aleatorio sin repetir ninguno hasta agotarlos;
+   *  - nunca usa el mismo piso en dos partidas seguidas (ni al rebarajar);
+   *  - la bolsa se guarda en localStorage, así no se repite aunque se recargue la página.
+   */
+  hideCandidates() {
+    const C = JT.CONFIG, spawn = this.maps.p1.spawn, list = [];
+    JT.FLOORS.forEach(def => {
+      this.maps[def.id].hides.forEach((h, i) => {
+        if (def.id === 'p1' && Math.hypot(h[0] - spawn[0], h[1] - spawn[1]) < C.TINA_AVOID_START_FLOOR_RADIUS) return;
+        list.push({ key: `${def.id}:${i}`, floor: def.id, x: h[0], y: h[1] });
+      });
+    });
+    return list;
+  }
+
+  buildHideBag(candidates, lastFloor) {
+    const byFloor = {};
+    candidates.forEach(c => (byFloor[c.floor] = byFloor[c.floor] || []).push(c.key));
+    Object.values(byFloor).forEach(l => Phaser.Utils.Array.Shuffle(l));
+    const bag = [];
+    let prev = lastFloor;
+    while (Object.values(byFloor).some(l => l.length)) {
+      const left = Object.keys(byFloor).filter(f => byFloor[f].length);
+      const others = left.filter(f => f !== prev);
+      // Prioriza pisos con más escondites pendientes para no quedar atrapado al final
+      const pool = others.length ? others : left;
+      const max = Math.max(...pool.map(f => byFloor[f].length));
+      const heavy = pool.filter(f => byFloor[f].length >= max - 1);
+      const f = Phaser.Utils.Array.GetRandom(heavy);
+      bag.push(byFloor[f].pop());
+      prev = f;
+    }
+    return bag;
+  }
+
+  pickTinaSpot() {
+    const candidates = this.hideCandidates();
+    const byKey = new Map(candidates.map(c => [c.key, c]));
+    let bag = [], last = null;
+    try {
+      bag = JSON.parse(localStorage.getItem('jt-tina-bag') || '[]');
+      last = localStorage.getItem('jt-tina-last');
+    } catch (e) { bag = this.hideBag || []; last = this.lastHide || null; }
+    // Si floors.js cambió, las claves guardadas pueden no existir: se descartan
+    bag = Array.isArray(bag) ? bag.filter(k => byKey.has(k) && k !== last) : [];
+    if (!bag.length) {
+      const lastFloor = last ? last.split(':')[0] : null;
+      bag = this.buildHideBag(candidates.filter(c => c.key !== last), lastFloor);
+    }
+    const key = bag.shift();
+    this.hideBag = bag; this.lastHide = key;
+    try {
+      localStorage.setItem('jt-tina-bag', JSON.stringify(bag));
+      localStorage.setItem('jt-tina-last', key);
+    } catch (e) { /* sin almacenamiento: se usa la memoria */ }
+    return byKey.get(key);
   }
 
   endGame(won) {
@@ -124,6 +174,8 @@ JT.GameScene = class GameScene extends Phaser.Scene {
     const used = Math.min(JT.CONFIG.GAME_SECONDS, this.elapsed);
     if (won) {
       JT.Audio.win();
+      JT.Audio.setPurr(1, 0);   // Tina ronronea feliz
+      this.time.delayedCall(3200, () => JT.Audio.setPurr(0));
       this.tina.anims.stop();
       this.tina.setFrame('t_happy');
       this.tweens.add({ targets: this.tina, y: this.tina.y - 18, yoyo: true, duration: 220, repeat: 2, ease: 'Quad.easeOut' });
@@ -234,6 +286,7 @@ JT.GameScene = class GameScene extends Phaser.Scene {
       this.remaining -= dt;
       this.updateTimer();
       if (this.remaining <= 0) { this.remaining = 0; this.updateTimer(); this.endGame(false); }
+      JT.Audio.setHurry(this.remaining <= C.HURRY_SECONDS);
     }
 
     const canMove = this.state === 'playing';
@@ -269,10 +322,18 @@ JT.GameScene = class GameScene extends Phaser.Scene {
       if (d < C.FIND_DISTANCE) { this.faceTowards(this.tina.x, this.tina.y); this.endGame(true); return; }
     }
 
-    // Maullidos
+    // Ronroneo: se oye cada vez más fuerte al acercarse a Tina (mismo piso)
+    const dTina = this.distToTina();
+    if (dTina < C.PURR_DISTANCE) {
+      const k = 1 - dTina / C.PURR_DISTANCE;
+      JT.Audio.setPurr(k * k, (this.tinaSpot.x - this.bella.x) / 500);
+    } else JT.Audio.setPurr(0);
+
+    // Maullidos (más seguidos cuando está cerca)
     this.nextMeow -= dt;
     if (this.nextMeow <= 0) {
-      this.nextMeow = Phaser.Math.FloatBetween(C.MEOW_EVERY[0], C.MEOW_EVERY[1]);
+      const every = dTina < C.NEAR_DISTANCE ? C.MEOW_NEAR_EVERY : C.MEOW_EVERY;
+      this.nextMeow = Phaser.Math.FloatBetween(every[0], every[1]);
       this.meow();
     }
   }
@@ -323,6 +384,13 @@ JT.GameScene = class GameScene extends Phaser.Scene {
     this.dir = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 2 : 3) : (dy < 0 ? 1 : 0);
   }
 
+  /* Distancia a Tina si está en este piso (Infinity si no) */
+  distToTina() {
+    const spot = this.tinaSpot;
+    if (!spot || spot.floor !== this.floorId) return Infinity;
+    return Math.hypot(spot.x - this.bella.x, spot.y - this.bella.y);
+  }
+
   meow() {
     const spot = this.tinaSpot;
     const here = this.defs[this.floorId], there = this.defs[spot.floor];
@@ -330,7 +398,9 @@ JT.GameScene = class GameScene extends Phaser.Scene {
       const dx = spot.x - this.bella.x, dy = spot.y - this.bella.y;
       const d = Math.hypot(dx, dy);
       const vol = Phaser.Math.Clamp(1 - d / 2200, 0.18, 1);
-      JT.Audio.meow(vol, dx / 700, false);
+      // Cerca: maullidos cortos e insistentes; lejos: maullidos largos
+      const kinds = d < 350 ? ['short', 'double', 'chirp'] : d < 800 ? ['double', 'long', 'short'] : ['long', 'long', 'yowl'];
+      JT.Audio.meow(vol, dx / 700, false, Phaser.Utils.Array.GetRandom(kinds));
       // Flecha aproximada (±20°) hacia el maullido
       const a = Math.atan2(dy, dx) + Phaser.Math.FloatBetween(-0.35, 0.35);
       this.showMeowArrow(a);
@@ -338,7 +408,7 @@ JT.GameScene = class GameScene extends Phaser.Scene {
       this.setHint(`¡Miau! Tina está ${near}`);
     } else {
       const up = there.level > here.level;
-      JT.Audio.meow(0.35, 0, true);
+      JT.Audio.meow(0.35, 0, true, Math.random() < 0.3 ? 'yowl' : 'long');
       this.meowDX = 0; this.meowDY = 0;
       const n = Math.abs(there.level - here.level);
       this.setHint(`Se oye un miau lejano… viene de ${up ? 'arriba ⬆' : 'abajo ⬇'}${n > 1 ? ' (varios pisos)' : ''}`);

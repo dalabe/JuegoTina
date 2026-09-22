@@ -11,6 +11,10 @@ JT.CONFIG = {
   FOG_ALPHA: 0.86,         // oscuridad fuera del radio de visión
   CELL: 6,                 // tamaño de celda de la grilla de colisión (px de mundo)
   MEOW_EVERY: [5, 8],      // Tina maúlla cada 5-8 segundos (pista sonora)
+  MEOW_NEAR_EVERY: [2, 3.5], // ...y más seguido cuando Bella está cerca
+  NEAR_DISTANCE: 450,      // distancia a la que Tina se considera "cerca"
+  PURR_DISTANCE: 550,      // a esta distancia empieza a oírse el ronroneo
+  HURRY_SECONDS: 60,       // la música se acelera cuando queda este tiempo
   TINA_AVOID_START_FLOOR_RADIUS: 700, // Tina no se esconde tan cerca del punto de inicio
   VIEW_WORLD_SIZE: 760,    // cuántos px de mundo se ven en la dimensión menor de la pantalla
   TINA_STATIC: true        // Tina permanece quieta en su escondite

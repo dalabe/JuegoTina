@@ -18,6 +18,7 @@ JT.Game = (function () {
 
   function start() {
     JT.Audio.unlock();
+    JT.Audio.startMusic();
     $('startScreen').classList.add('hidden');
     $('endScreen').classList.add('hidden');
     $('hud').classList.remove('hidden');
@@ -54,6 +55,17 @@ JT.Game = (function () {
     else (document.exitFullscreen || document.webkitExitFullscreen).call(document);
   }
 
+  function updateMusicBtn() {
+    const on = JT.Audio.isMusicOn();
+    $('btnMusic').textContent = on ? '🎵' : '🔇';
+    $('btnMusic').setAttribute('aria-pressed', String(on));
+  }
+  function toggleMusic() {
+    JT.Audio.unlock();
+    JT.Audio.toggleMusic();
+    updateMusicBtn();
+  }
+
   function boot() {
     JT.Controls.init();
     drawPortraits();
@@ -83,7 +95,10 @@ JT.Game = (function () {
     $('btnPlay').addEventListener('click', start);
     $('btnAgain').addEventListener('click', start);
     $('btnFull').addEventListener('click', toggleFullscreen);
+    $('btnMusic').addEventListener('click', e => { toggleMusic(); e.currentTarget.blur(); });
+    updateMusicBtn();
     window.addEventListener('keydown', e => {
+      if (e.code === 'KeyM' && !e.repeat) { toggleMusic(); return; }
       if (e.code !== 'Enter' && e.code !== 'Space') return;
       const startVisible = !$('startScreen').classList.contains('hidden') && !$('btnPlay').disabled;
       const endVisible = !$('endScreen').classList.contains('hidden');

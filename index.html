@@ -21,7 +21,10 @@
         <div id="floorName">Piso 1</div>
       </div>
       <div id="timer" aria-live="polite">5:00</div>
-      <button id="btnFull" class="icon-btn" title="Pantalla completa" aria-label="Pantalla completa">⛶</button>
+      <div class="hud-btns">
+        <button id="btnMusic" class="icon-btn" title="Música (M)" aria-label="Activar o silenciar la música">🎵</button>
+        <button id="btnFull" class="icon-btn" title="Pantalla completa" aria-label="Pantalla completa">⛶</button>
+      </div>
     </div>
     <div id="hint"></div>
   </div>
@@ -52,7 +55,7 @@
       <ul class="howto">
         <li>🕹️ Muévete con las <b>flechas</b> de la pantalla o del teclado (también WASD).</li>
         <li>🪜 Pisa las escaleras <span class="tag up">▲ subir</span> <span class="tag down">▼ bajar</span> para cambiar de piso.</li>
-        <li>🔊 Escucha los <b>maullidos</b>: te dicen si Tina está cerca, arriba o abajo.</li>
+        <li>🔊 Escucha los <b>maullidos</b>: te dicen si Tina está cerca, arriba o abajo. Si oyes <b>ronronear</b>, ¡ya casi la tienes!</li>
       </ul>
       <button id="btnPlay" class="btn" disabled>Cargando…</button>
     </div>
